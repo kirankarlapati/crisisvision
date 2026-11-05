@@ -332,6 +332,174 @@
             margin-top: 24px;
             font-size: 13px;
         }
+        /* AI Assessment & Chat Styles */
+        .ai-section {
+            border: 1px solid #2d486b;
+            background: linear-gradient(180deg, #122137 0%, #0d1726 100%);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .ai-header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(82, 214, 160, 0.15);
+            border: 1px solid rgba(82, 214, 160, 0.4);
+            color: #52d6a0;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .ai-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 22px;
+            margin-top: 14px;
+        }
+        @media (max-width: 950px) {
+            .ai-grid { grid-template-columns: 1fr; }
+        }
+        .explanation-card, .chat-card {
+            background: #0d1624;
+            border: 1px solid #23354e;
+            border-radius: 10px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+        }
+        .ai-card-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #f1f5f9;
+        }
+        .explanation-body {
+            flex: 1;
+            background: #080e18;
+            border: 1px solid #1a283c;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #cbd5e1;
+            min-height: 240px;
+            max-height: 420px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .explanation-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 180px;
+            color: #8da2be;
+            text-align: center;
+            gap: 12px;
+        }
+        .chat-history {
+            flex: 1;
+            min-height: 260px;
+            max-height: 340px;
+            overflow-y: auto;
+            background: #080e18;
+            border: 1px solid #1a283c;
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            max-width: 88%;
+            font-size: 13px;
+            line-height: 1.5;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .chat-msg.user {
+            align-self: flex-end;
+            background: #1e3a5f;
+            border: 1px solid #355887;
+            color: #e2e8f0;
+        }
+        .chat-msg.assistant {
+            align-self: flex-start;
+            background: #131e2e;
+            border: 1px solid #23344d;
+            color: #cbd5e1;
+        }
+        .chat-msg-header {
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            opacity: 0.75;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .chat-input {
+            flex: 1;
+            background: #080e18;
+            border: 1px solid #293b54;
+            color: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 7px;
+            font-size: 13px;
+            outline: none;
+        }
+        .chat-input:focus {
+            border-color: #52d6a0;
+            box-shadow: 0 0 0 2px rgba(82, 214, 160, 0.2);
+        }
+        .quick-prompts {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .quick-chip {
+            background: #152234;
+            border: 1px solid #283a52;
+            color: #94a3b8;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 11.5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .quick-chip:hover {
+            background: #233854;
+            color: #e2e8f0;
+            border-color: #52d6a0;
+        }
+        .pulsing-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(82, 214, 160, 0.3);
+            border-radius: 50%;
+            border-top-color: #52d6a0;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         @media (max-width: 800px) {
             .metrics { grid-template-columns: repeat(2, 1fr); }
             .images { grid-template-columns: 1fr; }
@@ -531,6 +699,74 @@
             </div>
         </section>
 
+        <!-- AI Intelligence & Damage Assessment (Llama 3.2 via Ollama) -->
+        <section class="panel ai-section">
+            <div class="ai-header-badge">⚡ AI Intelligence • Powered by Llama 3.2</div>
+            <h2>Automatic Damage Assessment & Incident Assistant</h2>
+            <p class="muted">
+                Natural-language damage explanation and interactive Q&A grounded strictly in the current incident's structured building extraction and hotspot risk JSON.
+            </p>
+
+            <div class="ai-grid">
+                <!-- Feature A: Automatic AI Explanation -->
+                <div class="explanation-card">
+                    <div class="ai-card-title">
+                        <span>📋 Executive Damage Explanation</span>
+                        <div style="display:flex; gap:8px;">
+                            <button id="btn-copy-explanation" class="button secondary" onclick="copyExplanation()" style="padding:4px 10px; font-size:12px; display:none;">📋 Copy</button>
+                            <button id="btn-retry-explanation" class="button secondary" onclick="loadAIExplanation(true)" style="padding:4px 10px; font-size:12px;">🔄 Refresh</button>
+                        </div>
+                    </div>
+                    <div id="explanation-body" class="explanation-body">
+                        <div class="explanation-placeholder">
+                            <span class="pulsing-spinner"></span>
+                            <div>
+                                Generating natural-language assessment via Llama 3.2...<br>
+                                <span style="font-size:12px; color:#64748b;">Grounding predictions in structured building & hotspot JSON</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; font-size:11.5px; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
+                        <span id="explanation-status">Connecting to local Ollama (llama3.2)...</span>
+                        <span style="font-style:italic;">Origin: Image Pixel Space (Not GPS)</span>
+                    </div>
+                </div>
+
+                <!-- Feature B: Optional Incident Chat -->
+                <div class="chat-card">
+                    <div class="ai-card-title">
+                        <span>💬 Incident Chat Assistant</span>
+                        <span style="font-size:11.5px; color:#64748b; font-weight:normal;">Context: <code>{{ record.incident_id }}</code></span>
+                    </div>
+
+                    <div id="chat-messages" class="chat-history">
+                        <div class="chat-msg assistant">
+                            <div class="chat-msg-header">CrisisVision Assistant (Llama 3.2)</div>
+                            <div>
+                                Hello! I have loaded the verified structured data for Incident <code>{{ record.incident_id }}</code>. 
+                                You can ask me any follow-up questions about building footprints, damage classes, hotspot scores, or assessment limitations.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick suggestion chips -->
+                    <div class="quick-prompts">
+                        <span class="quick-chip" onclick="askQuickPrompt('Summarize the overall damage in this incident.')">Summary</span>
+                        <span class="quick-chip" onclick="askQuickPrompt('Which hotspot has the highest priority score?')">Highest Hotspot</span>
+                        <span class="quick-chip" onclick="askQuickPrompt('How many buildings are predicted as destroyed or major damage?')">Severe Damage</span>
+                        <span class="quick-chip" onclick="askQuickPrompt('What are the key limitations of this satellite assessment?')">Limitations</span>
+                    </div>
+
+                    <!-- Input row -->
+                    <form id="chat-form" onsubmit="handleChatSubmit(event)" class="chat-input-row">
+                        <input type="text" id="chat-input" class="chat-input" placeholder="Ask a question about this incident..." autocomplete="off">
+                        <button type="submit" id="chat-send-btn" class="button" style="padding:8px 18px; font-size:13px;">Send</button>
+                    </form>
+                    <div id="chat-error-notice" style="display:none; color:#f87171; font-size:12px; margin-top:6px;"></div>
+                </div>
+            </div>
+        </section>
+
         <!-- Damage Hotspots Table (Section 5 & 6) -->
         <section class="panel">
             <h2>Priority Damage Hotspots ({{ risk_data.summary.total_hotspots }})</h2>
@@ -682,6 +918,10 @@
         const hotspotsJsonUrl = "{{ hotspots_json_url }}";
         const buildingsJsonName = "{{ record.buildings_json }}";
         const hotspotsJsonName = "{{ record.hotspots_json }}";
+        const incidentId = "{{ record.incident_id }}";
+        const explanationUrl = "{{ explanation_url }}";
+        const askUrl = "{{ ask_url }}";
+        let chatHistory = [];
 
         let activeSelectedId = null;
         let activeSelectedHotspotId = null;
@@ -910,6 +1150,172 @@
                 console.error("Copy failed", err);
             });
         }
+
+        /* Feature A: Automatic Damage Explanation via Llama 3.2 */
+        function loadAIExplanation(forceRefresh = false) {
+            const bodyEl = document.getElementById("explanation-body");
+            const statusEl = document.getElementById("explanation-status");
+            const copyBtn = document.getElementById("btn-copy-explanation");
+
+            bodyEl.innerHTML = `
+                <div class="explanation-placeholder">
+                    <span class="pulsing-spinner"></span>
+                    <div>
+                        ${forceRefresh ? 'Regenerating' : 'Generating'} natural-language assessment via Llama 3.2...<br>
+                        <span style="font-size:12px; color:#64748b;">Grounding predictions in structured building & hotspot JSON</span>
+                    </div>
+                </div>
+            `;
+            statusEl.innerText = "Querying local Ollama instance...";
+            copyBtn.style.display = "none";
+
+            const fetchUrl = explanationUrl + (forceRefresh ? '?refresh=true' : '');
+
+            fetch(fetchUrl)
+                .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data: data })))
+                .then(result => {
+                    if (result.ok && result.data && result.data.success && result.data.explanation) {
+                        bodyEl.innerText = result.data.explanation;
+                        statusEl.innerHTML = `<span>Model: <strong>Llama 3.2</strong> (Local) • Grounded in JSON</span>`;
+                        copyBtn.style.display = "inline-block";
+                    } else {
+                        const err = (result.data && result.data.error) ? result.data.error : "Failed to generate explanation from local model.";
+                        bodyEl.innerHTML = `
+                            <div style="padding:16px; background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.3); border-radius:8px; color:#fca5a5;">
+                                <div style="font-weight:700; font-size:14px; margin-bottom:6px;">⚠️ AI Explanation Unavailable</div>
+                                <div style="font-size:13px; color:#e2e8f0; line-height:1.5; margin-bottom:12px;">${escapeHtml(err)}</div>
+                                <button class="button secondary" onclick="loadAIExplanation(true)" style="padding:6px 14px; font-size:12px;">🔄 Retry Generation</button>
+                            </div>
+                        `;
+                        statusEl.innerText = "Local Ollama service error.";
+                    }
+                })
+                .catch(err => {
+                    console.error("Explanation fetch failed", err);
+                    bodyEl.innerHTML = `
+                        <div style="padding:16px; background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.3); border-radius:8px; color:#fca5a5;">
+                            <div style="font-weight:700; font-size:14px; margin-bottom:6px;">⚠️ Connection Error</div>
+                            <div style="font-size:13px; color:#e2e8f0; line-height:1.5; margin-bottom:12px;">Could not connect to the explanation endpoint. Please verify server status.</div>
+                            <button class="button secondary" onclick="loadAIExplanation(true)" style="padding:6px 14px; font-size:12px;">🔄 Retry</button>
+                        </div>
+                    `;
+                    statusEl.innerText = "Network connection failed.";
+                });
+        }
+
+        function copyExplanation() {
+            const bodyEl = document.getElementById("explanation-body");
+            navigator.clipboard.writeText(bodyEl.innerText).then(() => {
+                alert("AI Explanation copied to clipboard!");
+            }).catch(e => console.error("Copy failed", e));
+        }
+
+        /* Feature B: Incident Chat Assistant */
+        function askQuickPrompt(text) {
+            const input = document.getElementById("chat-input");
+            input.value = text;
+            handleChatSubmit(new Event('submit'));
+        }
+
+        function handleChatSubmit(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const input = document.getElementById("chat-input");
+            const sendBtn = document.getElementById("chat-send-btn");
+            const errorNotice = document.getElementById("chat-error-notice");
+            const messagesContainer = document.getElementById("chat-messages");
+
+            const question = (input.value || "").trim();
+            if (!question) return;
+
+            errorNotice.style.display = "none";
+            errorNotice.innerText = "";
+
+            // Render user bubble
+            appendChatMessage("user", question);
+            input.value = "";
+            input.disabled = true;
+            sendBtn.disabled = true;
+
+            // Render temporary typing indicator
+            const typingId = "chat-typing-" + Date.now();
+            const typingEl = document.createElement("div");
+            typingEl.className = "chat-msg assistant";
+            typingEl.id = typingId;
+            typingEl.innerHTML = `
+                <div class="chat-msg-header">CrisisVision Assistant (Llama 3.2)</div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="pulsing-spinner" style="width:14px; height:14px;"></span>
+                    <span style="color:#94a3b8;">Analyzing incident JSON...</span>
+                </div>
+            `;
+            messagesContainer.appendChild(typingEl);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            fetch(askUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: question,
+                    history: chatHistory.slice(-6)
+                })
+            })
+            .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data: data })))
+            .then(result => {
+                const typingNode = document.getElementById(typingId);
+                if (typingNode) typingNode.remove();
+
+                if (result.ok && result.data && result.data.success && result.data.answer) {
+                    appendChatMessage("assistant", result.data.answer);
+                    chatHistory.push({ role: "user", content: question });
+                    chatHistory.push({ role: "assistant", content: result.data.answer });
+                } else {
+                    const err = (result.data && result.data.error) ? result.data.error : "Failed to obtain response from assistant.";
+                    appendChatMessage("assistant", `⚠️ ${err}`);
+                    errorNotice.innerText = err;
+                    errorNotice.style.display = "block";
+                }
+            })
+            .catch(err => {
+                const typingNode = document.getElementById(typingId);
+                if (typingNode) typingNode.remove();
+                appendChatMessage("assistant", "⚠️ An error occurred while communicating with the chat endpoint.");
+                errorNotice.innerText = "Network error: Unable to reach chat service.";
+                errorNotice.style.display = "block";
+            })
+            .finally(() => {
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            });
+        }
+
+        function appendChatMessage(role, text) {
+            const container = document.getElementById("chat-messages");
+            const msgEl = document.createElement("div");
+            msgEl.className = `chat-msg ${role}`;
+
+            const headerText = role === 'user' ? 'Disaster Response Force (You)' : 'CrisisVision Assistant (Llama 3.2)';
+            msgEl.innerHTML = `
+                <div class="chat-msg-header">${headerText}</div>
+                <div style="white-space: pre-wrap;">${escapeHtml(text)}</div>
+            `;
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(unsafe) {
+            return (unsafe || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Initialize Automatic AI Explanation on page load
+        document.addEventListener("DOMContentLoaded", () => {
+            loadAIExplanation(false);
+        });
     </script>
 </body>
 </html>

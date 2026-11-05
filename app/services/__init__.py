@@ -20,6 +20,18 @@ from app.services.risk_mapping import (
     PRIORITY_DISPLAY_NAMES,
     PRIORITY_COLORS,
 )
+from app.services.llm_assistant import (
+    build_incident_context,
+    validate_incident_context,
+    generate_damage_explanation,
+    answer_incident_question,
+    get_ollama_client,
+    SYSTEM_PROMPT,
+    DEFAULT_OLLAMA_MODEL,
+    DEFAULT_OLLAMA_HOST,
+    LLMContextError,
+    LLMServiceError,
+)
 
 __all__ = [
     "predict_damage",
@@ -37,4 +49,14 @@ __all__ = [
     "DEFAULT_PRIORITY_THRESHOLDS",
     "PRIORITY_DISPLAY_NAMES",
     "PRIORITY_COLORS",
+    "build_incident_context",
+    "validate_incident_context",
+    "generate_damage_explanation",
+    "answer_incident_question",
+    "get_ollama_client",
+    "SYSTEM_PROMPT",
+    "DEFAULT_OLLAMA_MODEL",
+    "DEFAULT_OLLAMA_HOST",
+    "LLMContextError",
+    "LLMServiceError",
 ]

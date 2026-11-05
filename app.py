@@ -20,6 +20,11 @@ from app.services.risk_mapping import (
     extract_hotspots,
     save_risk_map_image,
 )
+from app.services.llm_assistant import (
+    build_incident_context,
+    generate_damage_explanation,
+    answer_incident_question,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -198,6 +203,8 @@ def analyze():
             risk_map_url=url_for("static", filename=f"results/{risk_map_name}"),
             json_url=url_for("static", filename=f"results/{json_name}"),
             hotspots_json_url=url_for("static", filename=f"results/{hotspots_json_name}"),
+            explanation_url=url_for("get_incident_explanation", incident_id=incident_id),
+            ask_url=url_for("ask_incident_question", incident_id=incident_id),
             database_status=database_status,
         )
 
@@ -231,6 +238,105 @@ def get_incident_hotspots(incident_id):
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return jsonify(data), 200
+
+
+@app.route("/api/incidents/<incident_id>/explanation", methods=["GET", "POST"])
+def get_incident_explanation(incident_id):
+    """Retrieve or generate the automated AI natural-language explanation for an incident."""
+    safe_id = secure_filename(incident_id)
+    if not safe_id:
+        return jsonify({"error": "Invalid incident ID", "success": False}), 400
+
+    b_path = RESULT_DIR / f"{safe_id}_buildings.json"
+    h_path = RESULT_DIR / f"{safe_id}_hotspots.json"
+    exp_path = RESULT_DIR / f"{safe_id}_explanation.json"
+
+    if not b_path.exists() or not h_path.exists():
+        return jsonify({"error": "Incident data not found", "success": False}), 404
+
+    force_refresh = (
+        request.args.get("refresh", "").lower() in ("true", "1")
+        or request.method == "POST"
+    )
+
+    if exp_path.exists() and not force_refresh:
+        try:
+            with open(exp_path, "r", encoding="utf-8") as f:
+                cached = json.load(f)
+            if cached.get("success"):
+                return jsonify(cached), 200
+        except Exception:
+            pass
+
+    try:
+        with open(b_path, "r", encoding="utf-8") as f:
+            buildings_data = json.load(f)
+        with open(h_path, "r", encoding="utf-8") as f:
+            hotspots_data = json.load(f)
+
+        context = build_incident_context(buildings_data, hotspots_data)
+        res = generate_damage_explanation(context)
+
+        if res.get("success"):
+            with open(exp_path, "w", encoding="utf-8") as f:
+                json.dump(res, f, indent=2)
+            return jsonify(res), 200
+        else:
+            return jsonify(res), 503
+
+    except Exception as exc:
+        app.logger.exception("Failed to generate explanation for %s", safe_id)
+        return jsonify({
+            "success": False,
+            "incident_id": safe_id,
+            "explanation": None,
+            "error": "Failed to process incident context for explanation.",
+        }), 500
+
+
+@app.route("/api/incidents/<incident_id>/ask", methods=["POST"])
+def ask_incident_question(incident_id):
+    """Answer questions about the specific incident using Llama 3.2 and structured JSON context."""
+    safe_id = secure_filename(incident_id)
+    if not safe_id:
+        return jsonify({"error": "Invalid incident ID", "success": False}), 400
+
+    b_path = RESULT_DIR / f"{safe_id}_buildings.json"
+    h_path = RESULT_DIR / f"{safe_id}_hotspots.json"
+
+    if not b_path.exists() or not h_path.exists():
+        return jsonify({"error": "Incident data not found", "success": False}), 404
+
+    data = request.get_json(silent=True) or {}
+    question = str(data.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "Question cannot be empty.", "success": False}), 400
+
+    history = data.get("history", [])
+    if not isinstance(history, list):
+        history = []
+
+    try:
+        with open(b_path, "r", encoding="utf-8") as f:
+            buildings_data = json.load(f)
+        with open(h_path, "r", encoding="utf-8") as f:
+            hotspots_data = json.load(f)
+
+        context = build_incident_context(buildings_data, hotspots_data)
+        res = answer_incident_question(context, question=question, chat_history=history)
+
+        status_code = 200 if res.get("success") else 503
+        return jsonify(res), status_code
+
+    except Exception as exc:
+        app.logger.exception("Failed to answer chat question for %s", safe_id)
+        return jsonify({
+            "success": False,
+            "incident_id": safe_id,
+            "question": question,
+            "answer": None,
+            "error": "Failed to generate answer for incident question.",
+        }), 500
 
 
 @app.errorhandler(413)
