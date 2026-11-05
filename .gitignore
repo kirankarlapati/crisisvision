@@ -21,3 +21,20 @@ htmlcov/
 .vscode/
 .DS_Store
 Thumbs.db
+
+
+
+# Satellite datasets - do not upload
+train/
+test_images/
+
+# Generated prediction images
+damage_overlay.png
+app/static/uploads/
+app/static/results/
+
+# Model weights and large files
+*.pt
+*.pth
+*.ckpt
+*.safetensors

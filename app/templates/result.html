@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results | CrisisVision</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #0b1220;
+            color: #e8eef8;
+        }
+        header {
+            background: #111b2d;
+            border-bottom: 1px solid #263247;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand { font-size: 23px; font-weight: 750; }
+        .brand span { color: #52d6a0; }
+        a { color: #52d6a0; text-decoration: none; }
+        main { max-width: 1100px; margin: 32px auto; padding: 0 20px; }
+        h1 { font-size: 29px; margin-bottom: 8px; }
+        .muted { color: #9eacc2; line-height: 1.6; }
+        .panel {
+            padding: 23px;
+            margin: 22px 0;
+            background: #131f32;
+            border: 1px solid #2b3a50;
+            border-radius: 14px;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 15px;
+        }
+        .metric { background: #0d1727; border-radius: 10px; padding: 17px; }
+        .metric strong { display: block; font-size: 24px; margin-top: 9px; }
+        .images {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+        .image-card { min-width: 0; }
+        .image-card img { width: 100%; border-radius: 9px; display: block; }
+        .image-card h3 { font-size: 16px; }
+        .heatmap { max-width: 750px; margin: 0 auto; }
+        .heatmap img { width: 100%; border-radius: 10px; }
+        .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
+        .legend span { color: #c8d4e5; font-size: 13px; }
+        .dot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; }
+        .notice {
+            border-left: 3px solid #f5bd62;
+            padding: 12px 15px;
+            background: #211d19;
+            color: #e8d6b7;
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 17px;
+            border-radius: 8px;
+            background: #35c995;
+            color: #071a16;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        @media (max-width: 650px) {
+            .images, .metrics { grid-template-columns: 1fr; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">Crisis<span>Vision</span></div>
+        <a href="/">← Back to dashboard</a>
+    </header>
+
+    <main>
+        <h1>Satellite Analysis Results</h1>
+        <p class="muted">Incident ID: {{ record.incident_id }}</p>
+
+        <section class="panel">
+            <h2>Prediction summary</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <span class="muted">Image resolution</span>
+                    <strong>{{ record.image_size[1] }} × {{ record.image_size[0] }}</strong>
+                </div>
+                <div class="metric">
+                    <span class="muted">Building pixels detected</span>
+                    <strong>{{ "{:,}".format(record.building_pixels) }}</strong>
+                </div>
+                <div class="metric">
+                    <span class="muted">Database status</span>
+                    <strong style="font-size:19px">
+                        {{ "Saved" if database_status == "saved" else "Not saved" }}
+                    </strong>
+                </div>
+            </div>
+            <p class="muted">
+                Pixel counts are model outputs, not counts of individual buildings
+                or independently verified damage.
+            </p>
+        </section>
+
+        <section class="panel">
+            <h2>Original satellite images</h2>
+            <div class="images">
+                <div class="image-card">
+                    <h3>Before disaster</h3>
+                    <img src="{{ pre_url }}" alt="Pre-disaster satellite image">
+                </div>
+                <div class="image-card">
+                    <h3>After disaster</h3>
+                    <img src="{{ post_url }}" alt="Post-disaster satellite image">
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>AI prediction overlay</h2>
+            <p class="muted">
+                Colored areas indicate predicted nonzero classes over the
+                post-disaster image.
+            </p>
+            <div class="heatmap">
+                <img src="{{ heatmap_url }}" alt="AI prediction heatmap overlay">
+            </div>
+            <div class="legend">
+                <span><i class="dot" style="background:#232323"></i>Class 0</span>
+                <span><i class="dot" style="background:#ffdc00"></i>Class 1</span>
+                <span><i class="dot" style="background:#ff8c00"></i>Class 2</span>
+                <span><i class="dot" style="background:#ff3232"></i>Class 3</span>
+                <span><i class="dot" style="background:#b400ff"></i>Class 4</span>
+            </div>
+            <p class="muted">Predicted pixel counts by class:</p>
+            <ul>
+                {% for class_id, count in record.predicted_class_pixel_counts.items() %}
+                <li>Class {{ class_id }}: {{ "{:,}".format(count) }} pixels</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <div class="notice">
+            <strong>Research prototype:</strong> These predictions are not
+            verified damage assessments. Image alignment, model class definitions,
+            and real-world accuracy must be validated before emergency-response use.
+        </div>
+
+        <a class="button" href="/">Analyze another image pair</a>
+    </main>
+</body>
+</html>

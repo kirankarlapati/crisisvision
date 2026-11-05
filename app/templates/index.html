@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrisisVision | Disaster Intelligence</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #0b1220;
+            color: #e8eef8;
+        }
+        header {
+            padding: 22px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #263247;
+            background: #111b2d;
+        }
+        .brand { font-size: 23px; font-weight: 750; }
+        .brand span { color: #52d6a0; }
+        .status { color: #52d6a0; font-size: 13px; }
+        main { max-width: 1100px; margin: 35px auto; padding: 0 20px; }
+        .intro { margin-bottom: 28px; }
+        .intro h1 { margin-bottom: 8px; font-size: 30px; }
+        .muted { color: #9eacc2; line-height: 1.6; }
+        .panel {
+            padding: 24px;
+            background: #131f32;
+            border: 1px solid #2b3a50;
+            border-radius: 14px;
+            margin-bottom: 22px;
+        }
+        .panel h2 { margin-top: 0; font-size: 19px; }
+        .uploads {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+        .upload-box {
+            border: 1px dashed #526580;
+            border-radius: 10px;
+            padding: 18px;
+            background: #0d1727;
+        }
+        label { display: block; margin-bottom: 12px; font-weight: 600; }
+        input[type="file"] { width: 100%; color: #bdcbe0; }
+        button {
+            border: 0;
+            border-radius: 9px;
+            padding: 13px 20px;
+            background: #35c995;
+            color: #071a16;
+            font-weight: 750;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        button:hover { background: #63e3b5; }
+        button:disabled { opacity: .6; cursor: wait; }
+        .actions { margin-top: 22px; }
+        .message { margin-top: 16px; color: #ffbf69; }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 15px;
+        }
+        .metric {
+            padding: 18px;
+            background: #0d1727;
+            border-radius: 10px;
+        }
+        .metric strong { display: block; font-size: 25px; margin-top: 8px; }
+        .images {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+        .images img { width: 100%; border-radius: 9px; }
+        .images h3 { font-size: 15px; }
+        footer { text-align: center; padding: 25px; color: #8493a9; font-size: 13px; }
+        @media (max-width: 650px) {
+            .uploads, .images, .result-grid { grid-template-columns: 1fr; }
+            .intro h1 { font-size: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">Crisis<span>Vision</span></div>
+        <div class="status">● AI service prototype</div>
+    </header>
+
+    <main>
+        <section class="intro">
+            <h1>Disaster Intelligence Dashboard</h1>
+            <p class="muted">
+                Compare pre-disaster and post-disaster satellite imagery
+                using a pretrained AI change-detection model.
+            </p>
+        </section>
+
+        <section class="panel">
+            <h2>Analyze satellite imagery</h2>
+            <p class="muted">
+                Select two images of the same area. For best results, use
+                similarly aligned RGB images.
+            </p>
+
+            <form action="/analyze" method="post" enctype="multipart/form-data">
+                <div class="uploads">
+                    <div class="upload-box">
+                        <label for="pre_image">Pre-disaster image</label>
+                        <input id="pre_image" name="pre_image" type="file"
+                               accept=".png,.jpg,.jpeg,.tif,.tiff" required>
+                    </div>
+                    <div class="upload-box">
+                        <label for="post_image">Post-disaster image</label>
+                        <input id="post_image" name="post_image" type="file"
+                               accept=".png,.jpg,.jpeg,.tif,.tiff" required>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button type="submit">Analyze images →</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h2>How it works</h2>
+            <div class="result-grid">
+                <div class="metric">
+                    <span class="muted">01 · Input</span>
+                    <strong>Upload</strong>
+                    <p class="muted">Provide before-and-after satellite images.</p>
+                </div>
+                <div class="metric">
+                    <span class="muted">02 · AI</span>
+                    <strong>Analyze</strong>
+                    <p class="muted">Run the pretrained ChangeOS model on CPU.</p>
+                </div>
+                <div class="metric">
+                    <span class="muted">03 · Output</span>
+                    <strong>Visualize</strong>
+                    <p class="muted">View a class-colored prediction overlay.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        CrisisVision · Academic prototype · AI predictions require validation
+    </footer>
+</body>
+</html>
