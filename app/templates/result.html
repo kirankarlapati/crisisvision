@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Results | CrisisVision</title>
+    <title>Analysis & Hotspot Risk Results | CrisisVision</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -70,6 +70,11 @@
         .pill.major_damage { border-color: rgba(255, 140, 0, 0.4); color: #fdba74; }
         .pill.destroyed { border-color: rgba(220, 0, 0, 0.4); color: #fca5a5; }
 
+        .pill.critical { border-color: rgba(220, 38, 38, 0.5); color: #f87171; background: rgba(220, 38, 38, 0.15); }
+        .pill.high { border-color: rgba(234, 88, 12, 0.5); color: #fb923c; background: rgba(234, 88, 12, 0.15); }
+        .pill.moderate { border-color: rgba(234, 179, 8, 0.5); color: #facc15; background: rgba(234, 179, 8, 0.15); }
+        .pill.low { border-color: rgba(59, 130, 246, 0.5); color: #93c5fd; background: rgba(59, 130, 246, 0.15); }
+
         .images {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -89,6 +94,7 @@
             gap: 10px;
             margin-bottom: 12px;
             align-items: center;
+            flex-wrap: wrap;
         }
         .tab-btn {
             background: #1c2b42;
@@ -99,6 +105,11 @@
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover {
+            background: #273b57;
+            color: #ffffff;
         }
         .tab-btn.active {
             background: #35c995;
@@ -143,6 +154,16 @@
             pointer-events: none;
         }
 
+        .svg-hotspot-rect {
+            cursor: pointer;
+            stroke-dasharray: 6 3;
+            transition: all 0.2s ease;
+        }
+        .svg-hotspot-rect:hover, .svg-hotspot-rect.selected {
+            stroke-width: 4 !important;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+        }
+
         .tooltip {
             position: absolute;
             background: rgba(15, 23, 42, 0.95);
@@ -162,19 +183,20 @@
         .legend span { color: #c8d4e5; font-size: 13px; display: inline-flex; align-items: center; }
         .dot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; }
 
-        /* Coordinates Disclaimer Notice */
+        /* Coordinates & Hotspot Disclaimer Notice */
         .coordinates-notice {
             background: #17263c;
             border: 1px solid #324a6e;
             border-left: 4px solid #52d6a0;
-            padding: 12px 18px;
+            padding: 14px 18px;
             border-radius: 8px;
             margin: 18px 0;
-            font-size: 14px;
+            font-size: 13.5px;
             color: #d1dfed;
+            line-height: 1.5;
         }
 
-        /* Building Table */
+        /* Tables & Filters */
         .table-controls {
             display: flex;
             justify-content: space-between;
@@ -203,7 +225,7 @@
             border-color: #52d6a0;
         }
         .table-wrap {
-            max-height: 480px;
+            max-height: 440px;
             overflow-y: auto;
             border: 1px solid #28374d;
             border-radius: 9px;
@@ -249,7 +271,17 @@
         .badge.major_damage { background: rgba(255, 140, 0, 0.2); color: #fb923c; border: 1px solid rgba(255, 140, 0, 0.4); }
         .badge.destroyed { background: rgba(220, 0, 0, 0.2); color: #f87171; border: 1px solid rgba(220, 0, 0, 0.4); }
 
+        .badge.critical_priority { background: rgba(220, 38, 38, 0.25); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.5); }
+        .badge.high_priority { background: rgba(234, 88, 12, 0.25); color: #fb923c; border: 1px solid rgba(234, 88, 12, 0.5); }
+        .badge.moderate_priority { background: rgba(234, 179, 8, 0.25); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.5); }
+        .badge.low_priority { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); }
+
         /* JSON Drawer */
+        .json-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
         pre.json-box {
             background: #0a101d;
             border: 1px solid #23344d;
@@ -266,6 +298,7 @@
             display: flex;
             gap: 10px;
             margin-top: 14px;
+            flex-wrap: wrap;
         }
         .button {
             display: inline-block;
@@ -313,7 +346,7 @@
     </header>
 
     <main>
-        <h1>Satellite Damage Analysis & Building Footprints</h1>
+        <h1>Satellite Damage Analysis & Hotspot Risk Mapping</h1>
         <p class="muted">Incident ID: <code>{{ record.incident_id }}</code></p>
 
         <!-- Prediction & Building Summary -->
@@ -329,8 +362,8 @@
                     <strong>{{ record.total_buildings }}</strong>
                 </div>
                 <div class="metric">
-                    <span class="muted">Building Footprint Pixels</span>
-                    <strong>{{ "{:,}".format(record.building_pixels) }}</strong>
+                    <span class="muted">Identified Hotspot Clusters</span>
+                    <strong style="color: #fb923c;">{{ risk_data.summary.total_hotspots }}</strong>
                 </div>
                 <div class="metric">
                     <span class="muted">Database Status</span>
@@ -359,11 +392,27 @@
                     Destroyed: {{ record.damage_summary.destroyed }} buildings
                 </div>
             </div>
+
+            <!-- Hotspot Priority Breakdown -->
+            <div class="damage-summary-pills" style="margin-top: 10px;">
+                <div class="pill critical">
+                    Critical Priority Hotspots: {{ risk_data.summary.critical_priority_hotspots }}
+                </div>
+                <div class="pill high">
+                    High Priority Hotspots: {{ risk_data.summary.high_priority_hotspots }}
+                </div>
+                <div class="pill moderate">
+                    Moderate Priority Hotspots: {{ risk_data.summary.moderate_priority_hotspots }}
+                </div>
+                <div class="pill low">
+                    Low Priority Hotspots: {{ risk_data.summary.low_priority_hotspots }}
+                </div>
+            </div>
         </section>
 
-        <!-- Mandatory Coordinate Disclaimer Notice -->
+        <!-- Mandatory Coordinate & Hotspot Disclaimer Notice -->
         <div class="coordinates-notice">
-            <strong>⚠️ Coordinate Notice:</strong> Coordinates refer to pixels in the uploaded image (origin [0, 0] at top-left). They are <strong>not geographic coordinates</strong> (latitude / longitude).
+            <strong>⚠️ Coordinate & Hotspot Notice:</strong> Coordinates refer to pixels in the uploaded image (origin [0, 0] at top-left). They are <strong>not geographic coordinates</strong> (latitude / longitude). Hotspot locations indicate image-relative concentrations of predicted severe damage for inspection triage. <strong>They are not validated evacuation zones or structural safety certifications.</strong>
         </div>
 
         <!-- Before & After Imagery -->
@@ -381,59 +430,170 @@
             </div>
         </section>
 
-        <!-- Interactive AI Overlay with Building Selectors -->
+        <!-- Interactive AI Overlay with Building Selectors & Hotspots -->
         <section class="panel">
-            <h2>Building-Level Damage Overlay</h2>
+            <h2>Spatial Damage & Hotspot Overlay Viewer</h2>
             <p class="muted">
-                Hover over or click any building bounding box to inspect its pixel coordinates, area, and damage probability distribution.
+                Switch layers to inspect raw damage predictions, building footprint bounding boxes, or Gaussian damage severity hotspots.
             </p>
 
             <div class="overlay-container">
                 <div class="overlay-tabs">
-                    <button class="tab-btn active" id="btn-heatmap" onclick="switchLayer('heatmap')">Damage Heatmap Overlay</button>
+                    <button class="tab-btn active" id="btn-heatmap" onclick="switchLayer('heatmap')">Building Damage Overlay</button>
+                    <button class="tab-btn" id="btn-hotspots" onclick="switchLayer('hotspots')">🔥 Damage Hotspot Heatmap</button>
                     <button class="tab-btn" id="btn-annotated" onclick="switchLayer('annotated')">Box & Centroid Overlay</button>
                     <button class="tab-btn" id="btn-post" onclick="switchLayer('post')">Original Post-Disaster</button>
                 </div>
 
                 <div class="image-viewport" id="viewport">
                     <img id="base-image" src="{{ heatmap_url }}" alt="Satellite overlay">
-                    <!-- Interactive SVG overlay containing bounding boxes & centroids -->
-                    <svg id="building-svg" class="svg-overlay" viewBox="0 0 {{ record.image_size[1] }} {{ record.image_size[0] }}" preserveAspectRatio="none">
-                        {% for b in buildings_data.buildings %}
-                        {% set color_map = {"no_damage": "#00c800", "minor_damage": "#ffdc00", "major_damage": "#ff8c00", "destroyed": "#dc0000"} %}
-                        {% set color = color_map.get(b.damage_label, "#ffffff") %}
-                        <rect id="rect-{{ b.building_id }}" class="svg-building"
-                              x="{{ b.bounding_box.x_min }}"
-                              y="{{ b.bounding_box.y_min }}"
-                              width="{{ b.bounding_box.x_max - b.bounding_box.x_min + 1 }}"
-                              height="{{ b.bounding_box.y_max - b.bounding_box.y_min + 1 }}"
-                              stroke="{{ color }}"
-                              stroke-width="2"
-                              fill="{{ color }}"
-                              fill-opacity="0.15"
-                              data-id="{{ b.building_id }}"
-                              data-damage="{{ b.damage_label }}"
-                              data-cx="{{ b.centroid.x }}"
-                              data-cy="{{ b.centroid.y }}"
-                              data-area="{{ b.area_pixels }}"
-                              data-confidence="{{ b.confidence }}"
-                              onmouseover="highlightBuilding('{{ b.building_id }}', event)"
-                              onmouseout="unhighlightBuilding('{{ b.building_id }}')"
-                              onclick="selectBuilding('{{ b.building_id }}')">
-                        </rect>
-                        <circle cx="{{ b.centroid.x }}" cy="{{ b.centroid.y }}" r="3" class="svg-centroid" />
-                        {% endfor %}
+
+                    <!-- Interactive SVG overlay containing bounding boxes, centroids & hotspot contours -->
+                    <svg id="interactive-svg" class="svg-overlay" viewBox="0 0 {{ record.image_size[1] }} {{ record.image_size[0] }}" preserveAspectRatio="none">
+                        <!-- Building boxes -->
+                        <g id="svg-buildings-layer">
+                            {% for b in buildings_data.buildings %}
+                            {% set color_map = {"no_damage": "#00c800", "minor_damage": "#ffdc00", "major_damage": "#ff8c00", "destroyed": "#dc0000"} %}
+                            {% set color = color_map.get(b.damage_label, "#ffffff") %}
+                            <rect id="rect-{{ b.building_id }}" class="svg-building"
+                                  x="{{ b.bounding_box.x_min }}"
+                                  y="{{ b.bounding_box.y_min }}"
+                                  width="{{ b.bounding_box.x_max - b.bounding_box.x_min + 1 }}"
+                                  height="{{ b.bounding_box.y_max - b.bounding_box.y_min + 1 }}"
+                                  stroke="{{ color }}"
+                                  stroke-width="2"
+                                  fill="{{ color }}"
+                                  fill-opacity="0.15"
+                                  data-id="{{ b.building_id }}"
+                                  data-damage="{{ b.damage_label }}"
+                                  data-cx="{{ b.centroid.x }}"
+                                  data-cy="{{ b.centroid.y }}"
+                                  data-area="{{ b.area_pixels }}"
+                                  data-confidence="{{ b.confidence }}"
+                                  onmouseover="highlightBuilding('{{ b.building_id }}', event)"
+                                  onmouseout="unhighlightBuilding('{{ b.building_id }}')"
+                                  onclick="selectBuilding('{{ b.building_id }}')">
+                            </rect>
+                            <circle cx="{{ b.centroid.x }}" cy="{{ b.centroid.y }}" r="3" class="svg-centroid" />
+                            {% endfor %}
+                        </g>
+
+                        <!-- Hotspot contours (active on Hotspot layer) -->
+                        <g id="svg-hotspots-layer" style="display: none;">
+                            {% for h in risk_data.hotspots %}
+                            {% set h_colors = {"critical_priority": "#dc2626", "high_priority": "#ea580c", "moderate_priority": "#eab308", "low_priority": "#3b82f6"} %}
+                            {% set h_color = h_colors.get(h.priority_category, "#ea580c") %}
+                            <rect id="hotspot-rect-{{ h.hotspot_id }}" class="svg-hotspot-rect"
+                                  x="{{ h.bounding_box.x_min }}"
+                                  y="{{ h.bounding_box.y_min }}"
+                                  width="{{ h.bounding_box.x_max - h.bounding_box.x_min + 1 }}"
+                                  height="{{ h.bounding_box.y_max - h.bounding_box.y_min + 1 }}"
+                                  stroke="{{ h_color }}"
+                                  stroke-width="2.5"
+                                  fill="{{ h_color }}"
+                                  fill-opacity="0.15"
+                                  data-id="{{ h.hotspot_id }}"
+                                  data-category="{{ h.priority_category }}"
+                                  data-score="{{ h.priority_score }}"
+                                  data-buildings="{{ h.building_count }}"
+                                  data-destroyed="{{ h.destroyed_count }}"
+                                  data-major="{{ h.major_damage_count }}"
+                                  data-cx="{{ h.centroid.x }}"
+                                  data-cy="{{ h.centroid.y }}"
+                                  onmouseover="highlightHotspot('{{ h.hotspot_id }}', event)"
+                                  onmouseout="unhighlightHotspot('{{ h.hotspot_id }}')"
+                                  onclick="selectHotspot('{{ h.hotspot_id }}')">
+                            </rect>
+                            <circle cx="{{ h.centroid.x }}" cy="{{ h.centroid.y }}" r="5" fill="{{ h_color }}" stroke="#ffffff" stroke-width="1.5" />
+                            {% endfor %}
+                        </g>
                     </svg>
+
                     <div id="tooltip" class="tooltip"></div>
                 </div>
 
-                <div class="legend">
+                <!-- Dynamic Legends -->
+                <div id="legend-damage" class="legend">
                     <span><i class="dot" style="background:#00c800"></i>No damage</span>
                     <span><i class="dot" style="background:#ffdc00"></i>Minor damage</span>
                     <span><i class="dot" style="background:#ff8c00"></i>Major damage</span>
                     <span><i class="dot" style="background:#dc0000"></i>Destroyed</span>
                     <span style="margin-left:auto; font-size:12px; color:#8ba0be;">White dots: Building Centroids</span>
                 </div>
+
+                <div id="legend-hotspots" class="legend" style="display: none;">
+                    <span><i class="dot" style="background:#dc2626"></i>Critical Priority</span>
+                    <span><i class="dot" style="background:#ea580c"></i>High Priority</span>
+                    <span><i class="dot" style="background:#eab308"></i>Moderate Priority</span>
+                    <span><i class="dot" style="background:#3b82f6"></i>Low Priority</span>
+                    <span style="margin-left:auto; font-size:12px; color:#8ba0be;">Dashed boxes: Cluster Boundaries</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Damage Hotspots Table (Section 5 & 6) -->
+        <section class="panel">
+            <h2>Priority Damage Hotspots ({{ risk_data.summary.total_hotspots }})</h2>
+            <p class="muted">
+                Spatial clusters with high concentrations of predicted building damage identified via Gaussian kernel aggregation:
+            </p>
+
+            <div class="table-controls">
+                <div class="filter-group">
+                    <span class="muted" style="align-self:center; font-size:13px; margin-right:4px;">Filter Priority:</span>
+                    <button class="filter-btn active" onclick="filterHotspotsTable('all', this)">All ({{ risk_data.summary.total_hotspots }})</button>
+                    <button class="filter-btn" onclick="filterHotspotsTable('critical_priority', this)">Critical ({{ risk_data.summary.critical_priority_hotspots }})</button>
+                    <button class="filter-btn" onclick="filterHotspotsTable('high_priority', this)">High ({{ risk_data.summary.high_priority_hotspots }})</button>
+                    <button class="filter-btn" onclick="filterHotspotsTable('moderate_priority', this)">Moderate ({{ risk_data.summary.moderate_priority_hotspots }})</button>
+                    <button class="filter-btn" onclick="filterHotspotsTable('low_priority', this)">Low ({{ risk_data.summary.low_priority_hotspots }})</button>
+                </div>
+                <div class="btn-group" style="margin-top:0;">
+                    <a href="{{ hotspots_json_url }}" download="{{ record.hotspots_json }}" class="button" style="padding:6px 14px; font-size:13px;">
+                        📥 Download Hotspots JSON
+                    </a>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table id="hotspots-table">
+                    <thead>
+                        <tr>
+                            <th>Hotspot ID</th>
+                            <th>Priority Category</th>
+                            <th>Priority Score</th>
+                            <th>Building Count</th>
+                            <th>Destroyed / Major</th>
+                            <th>Centroid (X, Y)</th>
+                            <th>Bounding Box [Xmin, Ymin, Xmax, Ymax]</th>
+                            <th>Associated Buildings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if risk_data.hotspots %}
+                        {% for h in risk_data.hotspots %}
+                        <tr id="hotspot-row-{{ h.hotspot_id }}" data-priority="{{ h.priority_category }}"
+                            onmouseover="highlightHotspot('{{ h.hotspot_id }}')"
+                            onmouseout="unhighlightHotspot('{{ h.hotspot_id }}')"
+                            onclick="selectHotspot('{{ h.hotspot_id }}')">
+                            <td><strong>{{ h.hotspot_id }}</strong></td>
+                            <td><span class="badge {{ h.priority_category }}">{{ h.priority_category.replace('_', ' ').title() }}</span></td>
+                            <td><strong>{{ (h.priority_score * 100)|round(1) }}%</strong></td>
+                            <td>{{ h.building_count }}</td>
+                            <td>{{ h.destroyed_count }} destroyed, {{ h.major_damage_count }} major</td>
+                            <td>({{ h.centroid.x }}, {{ h.centroid.y }})</td>
+                            <td>[{{ h.bounding_box.x_min }}, {{ h.bounding_box.y_min }}, {{ h.bounding_box.x_max }}, {{ h.bounding_box.y_max }}]</td>
+                            <td style="max-width:200px; word-break:break-all;">{{ h.building_ids|join(', ') if h.building_ids else 'None' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align:center; padding:24px; color:#8ba0be;">
+                                No concentrated damage hotspots identified above threshold. All buildings are undamaged or damage intensity is below spatial threshold.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
             </div>
         </section>
 
@@ -442,12 +602,12 @@
             <h2>Detected Building Instances ({{ record.total_buildings }})</h2>
             <div class="table-controls">
                 <div class="filter-group">
-                    <span class="muted" style="align-self:center; font-size:13px; margin-right:4px;">Filter:</span>
-                    <button class="filter-btn active" onclick="filterTable('all', this)">All ({{ record.total_buildings }})</button>
-                    <button class="filter-btn" onclick="filterTable('no_damage', this)">No Damage ({{ record.damage_summary.no_damage }})</button>
-                    <button class="filter-btn" onclick="filterTable('minor_damage', this)">Minor Damage ({{ record.damage_summary.minor_damage }})</button>
-                    <button class="filter-btn" onclick="filterTable('major_damage', this)">Major Damage ({{ record.damage_summary.major_damage }})</button>
-                    <button class="filter-btn" onclick="filterTable('destroyed', this)">Destroyed ({{ record.damage_summary.destroyed }})</button>
+                    <span class="muted" style="align-self:center; font-size:13px; margin-right:4px;">Filter Damage:</span>
+                    <button class="filter-btn active" onclick="filterBuildingsTable('all', this)">All ({{ record.total_buildings }})</button>
+                    <button class="filter-btn" onclick="filterBuildingsTable('no_damage', this)">No Damage ({{ record.damage_summary.no_damage }})</button>
+                    <button class="filter-btn" onclick="filterBuildingsTable('minor_damage', this)">Minor Damage ({{ record.damage_summary.minor_damage }})</button>
+                    <button class="filter-btn" onclick="filterBuildingsTable('major_damage', this)">Major Damage ({{ record.damage_summary.major_damage }})</button>
+                    <button class="filter-btn" onclick="filterBuildingsTable('destroyed', this)">Destroyed ({{ record.damage_summary.destroyed }})</button>
                 </div>
                 <div class="btn-group" style="margin-top:0;">
                     <a href="{{ json_url }}" download="{{ record.buildings_json }}" class="button" style="padding:6px 14px; font-size:13px;">
@@ -487,21 +647,25 @@
             </div>
         </section>
 
-        <!-- Standardized JSON Output Inspector -->
+        <!-- Standardized JSON Output Inspector (Dual Tab: Buildings & Hotspots) -->
         <section class="panel">
-            <h2>Standardized Building JSON Context</h2>
-            <p class="muted">
-                Structured image-pixel building context ready for downstream risk mapping or LLM evaluation:
-            </p>
-            <pre class="json-box" id="json-viewer">{{ buildings_data | tojson(indent=2) }}</pre>
+            <h2>Structured JSON Context</h2>
+            <div class="json-tabs">
+                <button class="tab-btn active" id="btn-json-hotspots" onclick="showJsonTab('hotspots')">Damage Hotspots JSON</button>
+                <button class="tab-btn" id="btn-json-buildings" onclick="showJsonTab('buildings')">Building Footprints JSON</button>
+            </div>
+
+            <pre class="json-box" id="json-hotspots-view">{{ risk_data | tojson(indent=2) }}</pre>
+            <pre class="json-box" id="json-buildings-view" style="display: none;">{{ buildings_data | tojson(indent=2) }}</pre>
+
             <div class="btn-group">
-                <button class="button secondary" onclick="copyJson()">📋 Copy JSON to Clipboard</button>
-                <a href="{{ json_url }}" download="{{ record.buildings_json }}" class="button">📥 Download JSON</a>
+                <button class="button secondary" onclick="copyCurrentJson()">📋 Copy Displayed JSON</button>
+                <a id="download-json-link" href="{{ hotspots_json_url }}" download="{{ record.hotspots_json }}" class="button">📥 Download JSON</a>
             </div>
         </section>
 
         <div class="notice">
-            <strong>Research prototype:</strong> Damage classifications and building extractions are derived from ChangeOS Swin-T semantic segmentation and connected-component analysis. Real-world emergency response missions must independently verify satellite image alignment and damage severity.
+            <strong>Research Prototype Notice:</strong> Damage hotspot clusters and building classifications are derived from ChangeOS Swin-T semantic predictions and distance-weighted Gaussian kernel spatial aggregation. They are intended as provisional decision-support tools for disaster reconnaissance and must not replace ground verification by certified emergency personnel.
         </div>
 
         <div style="margin-top: 24px;">
@@ -512,29 +676,62 @@
     <script>
         const heatmapUrl = "{{ heatmap_url }}";
         const annotatedUrl = "{{ annotated_url }}";
+        const riskMapUrl = "{{ risk_map_url }}";
         const postUrl = "{{ post_url }}";
+        const buildingsJsonUrl = "{{ json_url }}";
+        const hotspotsJsonUrl = "{{ hotspots_json_url }}";
+        const buildingsJsonName = "{{ record.buildings_json }}";
+        const hotspotsJsonName = "{{ record.hotspots_json }}";
+
         let activeSelectedId = null;
+        let activeSelectedHotspotId = null;
+        let currentJsonTab = 'hotspots';
 
         function switchLayer(layer) {
             const baseImg = document.getElementById("base-image");
-            const svgOverlay = document.getElementById("building-svg");
-            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            const buildingsLayer = document.getElementById("svg-buildings-layer");
+            const hotspotsLayer = document.getElementById("svg-hotspots-layer");
+            const legendDamage = document.getElementById("legend-damage");
+            const legendHotspots = document.getElementById("legend-hotspots");
+
+            document.querySelectorAll(".tab-btn").forEach(b => {
+                if (['btn-heatmap', 'btn-hotspots', 'btn-annotated', 'btn-post'].includes(b.id)) {
+                    b.classList.remove("active");
+                }
+            });
 
             if (layer === 'heatmap') {
                 baseImg.src = heatmapUrl;
-                svgOverlay.style.display = "block";
+                buildingsLayer.style.display = "inline";
+                hotspotsLayer.style.display = "none";
+                legendDamage.style.display = "flex";
+                legendHotspots.style.display = "none";
                 document.getElementById("btn-heatmap").classList.add("active");
+            } else if (layer === 'hotspots') {
+                baseImg.src = riskMapUrl;
+                buildingsLayer.style.display = "none";
+                hotspotsLayer.style.display = "inline";
+                legendDamage.style.display = "none";
+                legendHotspots.style.display = "flex";
+                document.getElementById("btn-hotspots").classList.add("active");
             } else if (layer === 'annotated') {
                 baseImg.src = annotatedUrl;
-                svgOverlay.style.display = "none";
+                buildingsLayer.style.display = "none";
+                hotspotsLayer.style.display = "none";
+                legendDamage.style.display = "flex";
+                legendHotspots.style.display = "none";
                 document.getElementById("btn-annotated").classList.add("active");
             } else if (layer === 'post') {
                 baseImg.src = postUrl;
-                svgOverlay.style.display = "block";
+                buildingsLayer.style.display = "inline";
+                hotspotsLayer.style.display = "inline";
+                legendDamage.style.display = "flex";
+                legendHotspots.style.display = "flex";
                 document.getElementById("btn-post").classList.add("active");
             }
         }
 
+        /* Building Highlighting & Tooltip */
         function highlightBuilding(bid, event) {
             const rect = document.getElementById("rect-" + bid);
             const row = document.getElementById("row-" + bid);
@@ -558,11 +755,8 @@
                 `;
 
                 const viewport = document.getElementById("viewport").getBoundingClientRect();
-                const mouseX = event.clientX - viewport.left;
-                const mouseY = event.clientY - viewport.top;
-
-                tooltip.style.left = (mouseX + 15) + "px";
-                tooltip.style.top = (mouseY + 15) + "px";
+                tooltip.style.left = (event.clientX - viewport.left + 15) + "px";
+                tooltip.style.top = (event.clientY - viewport.top + 15) + "px";
                 tooltip.style.display = "block";
             }
         }
@@ -593,8 +787,66 @@
             }
         }
 
-        function filterTable(category, btn) {
-            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+        /* Hotspot Highlighting & Tooltip */
+        function highlightHotspot(hid, event) {
+            const rect = document.getElementById("hotspot-rect-" + hid);
+            const row = document.getElementById("hotspot-row-" + hid);
+            if (rect) rect.classList.add("selected");
+            if (row) row.classList.add("selected-row");
+
+            if (event && rect) {
+                const tooltip = document.getElementById("tooltip");
+                const cat = rect.getAttribute("data-category").replace("_", " ").toUpperCase();
+                const score = (parseFloat(rect.getAttribute("data-score")) * 100).toFixed(1);
+                const bcount = rect.getAttribute("data-buildings");
+                const dest = rect.getAttribute("data-destroyed");
+                const major = rect.getAttribute("data-major");
+                const cx = rect.getAttribute("data-cx");
+                const cy = rect.getAttribute("data-cy");
+
+                tooltip.innerHTML = `
+                    <strong>Hotspot ${hid}</strong><br>
+                    Priority: <b>${cat}</b> (${score}%)<br>
+                    Buildings: ${bcount} (${dest} destroyed, ${major} major)<br>
+                    Centroid: (${cx}, ${cy})
+                `;
+
+                const viewport = document.getElementById("viewport").getBoundingClientRect();
+                tooltip.style.left = (event.clientX - viewport.left + 15) + "px";
+                tooltip.style.top = (event.clientY - viewport.top + 15) + "px";
+                tooltip.style.display = "block";
+            }
+        }
+
+        function unhighlightHotspot(hid) {
+            if (hid === activeSelectedHotspotId) return;
+            const rect = document.getElementById("hotspot-rect-" + hid);
+            const row = document.getElementById("hotspot-row-" + hid);
+            if (rect) rect.classList.remove("selected");
+            if (row) row.classList.remove("selected-row");
+            document.getElementById("tooltip").style.display = "none";
+        }
+
+        function selectHotspot(hid) {
+            if (activeSelectedHotspotId && activeSelectedHotspotId !== hid) {
+                const prevRect = document.getElementById("hotspot-rect-" + activeSelectedHotspotId);
+                const prevRow = document.getElementById("hotspot-row-" + activeSelectedHotspotId);
+                if (prevRect) prevRect.classList.remove("selected");
+                if (prevRow) prevRow.classList.remove("selected-row");
+            }
+            activeSelectedHotspotId = hid;
+            const rect = document.getElementById("hotspot-rect-" + hid);
+            const row = document.getElementById("hotspot-row-" + hid);
+            if (rect) rect.classList.add("selected");
+            if (row) {
+                row.classList.add("selected-row");
+                row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        /* Filter Tables */
+        function filterBuildingsTable(category, btn) {
+            document.querySelectorAll("#buildings-table .filter-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
 
             const rows = document.querySelectorAll("#buildings-table tbody tr");
@@ -607,10 +859,53 @@
             });
         }
 
-        function copyJson() {
-            const text = document.getElementById("json-viewer").innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Building JSON copied to clipboard!");
+        function filterHotspotsTable(priority, btn) {
+            document.querySelectorAll("#hotspots-table .filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const rows = document.querySelectorAll("#hotspots-table tbody tr");
+            rows.forEach(r => {
+                if (priority === 'all' || r.getAttribute("data-priority") === priority) {
+                    r.style.display = "";
+                } else {
+                    r.style.display = "none";
+                }
+            });
+        }
+
+        /* JSON Tabs & Copy */
+        function showJsonTab(tab) {
+            currentJsonTab = tab;
+            const hView = document.getElementById("json-hotspots-view");
+            const bView = document.getElementById("json-buildings-view");
+            const hBtn = document.getElementById("btn-json-hotspots");
+            const bBtn = document.getElementById("btn-json-buildings");
+            const downloadLink = document.getElementById("download-json-link");
+
+            if (tab === 'hotspots') {
+                hView.style.display = "block";
+                bView.style.display = "none";
+                hBtn.classList.add("active");
+                bBtn.classList.remove("active");
+                downloadLink.href = hotspotsJsonUrl;
+                downloadLink.setAttribute("download", hotspotsJsonName);
+            } else {
+                hView.style.display = "none";
+                bView.style.display = "block";
+                hBtn.classList.remove("active");
+                bBtn.classList.add("active");
+                downloadLink.href = buildingsJsonUrl;
+                downloadLink.setAttribute("download", buildingsJsonName);
+            }
+        }
+
+        function copyCurrentJson() {
+            const viewer = currentJsonTab === 'hotspots'
+                ? document.getElementById("json-hotspots-view")
+                : document.getElementById("json-buildings-view");
+
+            navigator.clipboard.writeText(viewer.innerText).then(() => {
+                alert((currentJsonTab === 'hotspots' ? "Hotspots" : "Buildings") + " JSON copied to clipboard!");
             }).catch(err => {
                 console.error("Copy failed", err);
             });

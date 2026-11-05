@@ -15,6 +15,11 @@ from app.services.building_extraction import (
     extract_buildings,
     save_annotated_buildings_image,
 )
+from app.services.risk_mapping import (
+    generate_damage_heatmap,
+    extract_hotspots,
+    save_risk_map_image,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -81,13 +86,17 @@ def analyze():
     post_name = f"{incident_id}_post{Path(secure_filename(post_file.filename)).suffix.lower()}"
     heatmap_name = f"{incident_id}_heatmap.png"
     annotated_name = f"{incident_id}_annotated.png"
+    risk_map_name = f"{incident_id}_risk_map.png"
     json_name = f"{incident_id}_buildings.json"
+    hotspots_json_name = f"{incident_id}_hotspots.json"
 
     pre_path = UPLOAD_DIR / pre_name
     post_path = UPLOAD_DIR / post_name
     heatmap_path = RESULT_DIR / heatmap_name
     annotated_path = RESULT_DIR / annotated_name
+    risk_map_path = RESULT_DIR / risk_map_name
     json_path = RESULT_DIR / json_name
+    hotspots_json_path = RESULT_DIR / hotspots_json_name
 
     try:
         pre_file.save(pre_path)
@@ -115,9 +124,31 @@ def analyze():
             str(annotated_path),
         )
 
+        # Generate pixel-based damage hotspot mapping
+        risk_data = extract_hotspots(
+            buildings_data,
+            sigma_pixels=50.0,
+            threshold=0.5,
+            min_area_pixels=50,
+        )
+
+        # Generate continuous spatial damage heatmap & composite overlay
+        heatmap_raw = generate_damage_heatmap(buildings_data, sigma_pixels=50.0)
+        save_risk_map_image(
+            str(post_path),
+            heatmap_raw,
+            risk_data,
+            str(risk_map_path),
+            threshold=0.5,
+        )
+
         # Persist structured building JSON
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(buildings_data, f, indent=2)
+
+        # Persist structured risk mapping JSON
+        with open(hotspots_json_path, "w", encoding="utf-8") as f:
+            json.dump(risk_data, f, indent=2)
 
         import numpy as np
 
@@ -132,11 +163,14 @@ def analyze():
             "post_image": post_name,
             "heatmap": heatmap_name,
             "annotated_image": annotated_name,
+            "risk_map": risk_map_name,
             "buildings_json": json_name,
+            "hotspots_json": hotspots_json_name,
             "image_size": result["image_size"],
             "building_pixels": int(result["building_map"].sum()),
             "total_buildings": buildings_data["total_buildings"],
             "damage_summary": buildings_data["damage_summary"],
+            "hotspots_summary": risk_data["summary"],
             "predicted_class_pixel_counts": {
                 str(int(class_id)): int(count)
                 for class_id, count in zip(class_ids, counts)
@@ -156,11 +190,14 @@ def analyze():
             "result.html",
             record=record,
             buildings_data=buildings_data,
+            risk_data=risk_data,
             pre_url=url_for("static", filename=f"uploads/{pre_name}"),
             post_url=url_for("static", filename=f"uploads/{post_name}"),
             heatmap_url=url_for("static", filename=f"results/{heatmap_name}"),
             annotated_url=url_for("static", filename=f"results/{annotated_name}"),
+            risk_map_url=url_for("static", filename=f"results/{risk_map_name}"),
             json_url=url_for("static", filename=f"results/{json_name}"),
+            hotspots_json_url=url_for("static", filename=f"results/{hotspots_json_name}"),
             database_status=database_status,
         )
 
@@ -177,6 +214,18 @@ def get_incident_buildings(incident_id):
     """Retrieve structured building-level JSON for a given incident."""
     safe_id = secure_filename(incident_id)
     json_path = RESULT_DIR / f"{safe_id}_buildings.json"
+    if not json_path.exists():
+        return jsonify({"error": "Incident not found"}), 404
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return jsonify(data), 200
+
+
+@app.route("/api/incidents/<incident_id>/hotspots")
+def get_incident_hotspots(incident_id):
+    """Retrieve structured damage hotspot risk JSON for a given incident."""
+    safe_id = secure_filename(incident_id)
+    json_path = RESULT_DIR / f"{safe_id}_hotspots.json"
     if not json_path.exists():
         return jsonify({"error": "Incident not found"}), 404
     with open(json_path, "r", encoding="utf-8") as f:

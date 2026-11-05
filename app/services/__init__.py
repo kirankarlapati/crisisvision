@@ -10,6 +10,16 @@ from app.services.building_extraction import (
     DAMAGE_LABELS,
     DAMAGE_DISPLAY_NAMES,
 )
+from app.services.risk_mapping import (
+    calculate_building_severity,
+    generate_damage_heatmap,
+    extract_hotspots,
+    validate_risk_data,
+    save_risk_map_image,
+    DEFAULT_PRIORITY_THRESHOLDS,
+    PRIORITY_DISPLAY_NAMES,
+    PRIORITY_COLORS,
+)
 
 __all__ = [
     "predict_damage",
@@ -19,5 +29,12 @@ __all__ = [
     "save_annotated_buildings_image",
     "DAMAGE_LABELS",
     "DAMAGE_DISPLAY_NAMES",
+    "calculate_building_severity",
+    "generate_damage_heatmap",
+    "extract_hotspots",
+    "validate_risk_data",
+    "save_risk_map_image",
+    "DEFAULT_PRIORITY_THRESHOLDS",
+    "PRIORITY_DISPLAY_NAMES",
+    "PRIORITY_COLORS",
 ]
-
