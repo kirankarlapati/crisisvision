@@ -91,7 +91,7 @@
             <h2>Prediction summary</h2>
             <div class="metrics">
                 <div class="metric">
-                    <span class="muted">Image resolution</span>
+                    <span class="muted">Original image resolution</span>
                     <strong>{{ record.image_size[1] }} × {{ record.image_size[0] }}</strong>
                 </div>
                 <div class="metric">
@@ -106,8 +106,8 @@
                 </div>
             </div>
             <p class="muted">
-                Pixel counts are model outputs, not counts of individual buildings
-                or independently verified damage.
+                Pixel counts are model outputs at the original image resolution.
+                Predictions are not independently verified damage assessments.
             </p>
         </section>
 
@@ -135,16 +135,16 @@
                 <img src="{{ heatmap_url }}" alt="AI prediction heatmap overlay">
             </div>
             <div class="legend">
-                <span><i class="dot" style="background:#232323"></i>Class 0</span>
-                <span><i class="dot" style="background:#ffdc00"></i>Class 1</span>
-                <span><i class="dot" style="background:#ff8c00"></i>Class 2</span>
-                <span><i class="dot" style="background:#ff3232"></i>Class 3</span>
-                <span><i class="dot" style="background:#b400ff"></i>Class 4</span>
+                <span><i class="dot" style="background:#00c800"></i>No damage (1)</span>
+                <span><i class="dot" style="background:#ffdc00"></i>Minor damage (2)</span>
+                <span><i class="dot" style="background:#ff8c00"></i>Major damage (3)</span>
+                <span><i class="dot" style="background:#dc0000"></i>Destroyed (4)</span>
             </div>
-            <p class="muted">Predicted pixel counts by class:</p>
+            <p class="muted">Predicted pixel counts by damage class:</p>
             <ul>
+                {% set class_names = {"0": "Background", "1": "No damage", "2": "Minor damage", "3": "Major damage", "4": "Destroyed"} %}
                 {% for class_id, count in record.predicted_class_pixel_counts.items() %}
-                <li>Class {{ class_id }}: {{ "{:,}".format(count) }} pixels</li>
+                <li>{{ class_names.get(class_id, "Class " ~ class_id) }}: {{ "{:,}".format(count) }} pixels</li>
                 {% endfor %}
             </ul>
         </section>
