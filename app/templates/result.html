@@ -276,24 +276,6 @@
         .badge.moderate_priority { background: rgba(234, 179, 8, 0.25); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.5); }
         .badge.low_priority { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); }
 
-        /* JSON Drawer */
-        .json-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        pre.json-box {
-            background: #0a101d;
-            border: 1px solid #23344d;
-            border-radius: 8px;
-            padding: 16px;
-            color: #7dd3fc;
-            max-height: 350px;
-            overflow-y: auto;
-            font-family: "Consolas", "Courier New", monospace;
-            font-size: 12px;
-            margin: 10px 0;
-        }
         .btn-group {
             display: flex;
             gap: 10px;
@@ -704,7 +686,7 @@
             <div class="ai-header-badge">⚡ AI Intelligence • Powered by Llama 3.2</div>
             <h2>Automatic Damage Assessment & Incident Assistant</h2>
             <p class="muted">
-                Natural-language damage explanation and interactive Q&A grounded strictly in the current incident's structured building extraction and hotspot risk JSON.
+                Natural-language damage explanation and interactive Q&A grounded strictly in detected building footprints and spatial damage clusters.
             </p>
 
             <div class="ai-grid">
@@ -722,7 +704,7 @@
                             <span class="pulsing-spinner"></span>
                             <div>
                                 Generating natural-language assessment via Llama 3.2...<br>
-                                <span style="font-size:12px; color:#64748b;">Grounding predictions in structured building & hotspot JSON</span>
+                                <span style="font-size:12px; color:#64748b;">Synthesizing building footprints and spatial damage clusters...</span>
                             </div>
                         </div>
                     </div>
@@ -783,11 +765,6 @@
                     <button class="filter-btn" onclick="filterHotspotsTable('moderate_priority', this)">Moderate ({{ risk_data.summary.moderate_priority_hotspots }})</button>
                     <button class="filter-btn" onclick="filterHotspotsTable('low_priority', this)">Low ({{ risk_data.summary.low_priority_hotspots }})</button>
                 </div>
-                <div class="btn-group" style="margin-top:0;">
-                    <a href="{{ hotspots_json_url }}" download="{{ record.hotspots_json }}" class="button" style="padding:6px 14px; font-size:13px;">
-                        📥 Download Hotspots JSON
-                    </a>
-                </div>
             </div>
 
             <div class="table-wrap">
@@ -845,11 +822,6 @@
                     <button class="filter-btn" onclick="filterBuildingsTable('major_damage', this)">Major Damage ({{ record.damage_summary.major_damage }})</button>
                     <button class="filter-btn" onclick="filterBuildingsTable('destroyed', this)">Destroyed ({{ record.damage_summary.destroyed }})</button>
                 </div>
-                <div class="btn-group" style="margin-top:0;">
-                    <a href="{{ json_url }}" download="{{ record.buildings_json }}" class="button" style="padding:6px 14px; font-size:13px;">
-                        📥 Download Buildings JSON
-                    </a>
-                </div>
             </div>
 
             <div class="table-wrap">
@@ -880,23 +852,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
-        </section>
-
-        <!-- Standardized JSON Output Inspector (Dual Tab: Buildings & Hotspots) -->
-        <section class="panel">
-            <h2>Structured JSON Context</h2>
-            <div class="json-tabs">
-                <button class="tab-btn active" id="btn-json-hotspots" onclick="showJsonTab('hotspots')">Damage Hotspots JSON</button>
-                <button class="tab-btn" id="btn-json-buildings" onclick="showJsonTab('buildings')">Building Footprints JSON</button>
-            </div>
-
-            <pre class="json-box" id="json-hotspots-view">{{ risk_data | tojson(indent=2) }}</pre>
-            <pre class="json-box" id="json-buildings-view" style="display: none;">{{ buildings_data | tojson(indent=2) }}</pre>
-
-            <div class="btn-group">
-                <button class="button secondary" onclick="copyCurrentJson()">📋 Copy Displayed JSON</button>
-                <a id="download-json-link" href="{{ hotspots_json_url }}" download="{{ record.hotspots_json }}" class="button">📥 Download JSON</a>
             </div>
         </section>
 
@@ -1113,44 +1068,6 @@
             });
         }
 
-        /* JSON Tabs & Copy */
-        function showJsonTab(tab) {
-            currentJsonTab = tab;
-            const hView = document.getElementById("json-hotspots-view");
-            const bView = document.getElementById("json-buildings-view");
-            const hBtn = document.getElementById("btn-json-hotspots");
-            const bBtn = document.getElementById("btn-json-buildings");
-            const downloadLink = document.getElementById("download-json-link");
-
-            if (tab === 'hotspots') {
-                hView.style.display = "block";
-                bView.style.display = "none";
-                hBtn.classList.add("active");
-                bBtn.classList.remove("active");
-                downloadLink.href = hotspotsJsonUrl;
-                downloadLink.setAttribute("download", hotspotsJsonName);
-            } else {
-                hView.style.display = "none";
-                bView.style.display = "block";
-                hBtn.classList.remove("active");
-                bBtn.classList.add("active");
-                downloadLink.href = buildingsJsonUrl;
-                downloadLink.setAttribute("download", buildingsJsonName);
-            }
-        }
-
-        function copyCurrentJson() {
-            const viewer = currentJsonTab === 'hotspots'
-                ? document.getElementById("json-hotspots-view")
-                : document.getElementById("json-buildings-view");
-
-            navigator.clipboard.writeText(viewer.innerText).then(() => {
-                alert((currentJsonTab === 'hotspots' ? "Hotspots" : "Buildings") + " JSON copied to clipboard!");
-            }).catch(err => {
-                console.error("Copy failed", err);
-            });
-        }
-
         /* Feature A: Automatic Damage Explanation via Llama 3.2 */
         function loadAIExplanation(forceRefresh = false) {
             const bodyEl = document.getElementById("explanation-body");
@@ -1162,7 +1079,7 @@
                     <span class="pulsing-spinner"></span>
                     <div>
                         ${forceRefresh ? 'Regenerating' : 'Generating'} natural-language assessment via Llama 3.2...<br>
-                        <span style="font-size:12px; color:#64748b;">Grounding predictions in structured building & hotspot JSON</span>
+                        <span style="font-size:12px; color:#64748b;">Synthesizing building footprints and spatial damage clusters...</span>
                     </div>
                 </div>
             `;
@@ -1176,7 +1093,7 @@
                 .then(result => {
                     if (result.ok && result.data && result.data.success && result.data.explanation) {
                         bodyEl.innerText = result.data.explanation;
-                        statusEl.innerHTML = `<span>Model: <strong>Llama 3.2</strong> (Local) • Grounded in JSON</span>`;
+                        statusEl.innerHTML = `<span>Model: <strong>Llama 3.2</strong> (Local) • Verified Assessment Data</span>`;
                         copyBtn.style.display = "inline-block";
                     } else {
                         const err = (result.data && result.data.error) ? result.data.error : "Failed to generate explanation from local model.";
@@ -1245,7 +1162,7 @@
                 <div class="chat-msg-header">CrisisVision Assistant (Llama 3.2)</div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span class="pulsing-spinner" style="width:14px; height:14px;"></span>
-                    <span style="color:#94a3b8;">Analyzing incident JSON...</span>
+                    <span style="color:#94a3b8;">Analyzing disaster assessment data...</span>
                 </div>
             `;
             messagesContainer.appendChild(typingEl);
