@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,14 +8,14 @@
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            font-family: "Segoe UI", Arial, sans-serif;
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             background: #0b1220;
             color: #e8eef8;
         }
         header {
             background: #111b2d;
             border-bottom: 1px solid #263247;
-            padding: 20px 5%;
+            padding: 18px 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -25,11 +24,13 @@
         .brand { font-size: 23px; font-weight: 750; }
         .brand span { color: #52d6a0; }
         a { color: #52d6a0; text-decoration: none; }
-        main { max-width: 1100px; margin: 32px auto; padding: 0 20px; }
-        h1 { font-size: 29px; margin-bottom: 8px; }
+        a:hover { text-decoration: underline; }
+        main { max-width: 1200px; margin: 28px auto; padding: 0 20px 60px 20px; }
+        h1 { font-size: 28px; margin-bottom: 6px; }
+        h2 { font-size: 20px; margin-top: 0; margin-bottom: 14px; }
         .muted { color: #9eacc2; line-height: 1.6; }
         .panel {
-            padding: 23px;
+            padding: 24px;
             margin: 22px 0;
             background: #131f32;
             border: 1px solid #2b3a50;
@@ -37,42 +38,270 @@
         }
         .metrics {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
         }
-        .metric { background: #0d1727; border-radius: 10px; padding: 17px; }
-        .metric strong { display: block; font-size: 24px; margin-top: 9px; }
+        .metric {
+            background: #0d1727;
+            border-radius: 10px;
+            padding: 16px;
+            border: 1px solid #1f2e44;
+        }
+        .metric strong { display: block; font-size: 23px; margin-top: 8px; }
+        .damage-summary-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #1a273c;
+            border: 1px solid #2b3e58;
+        }
+        .pill.no_damage { border-color: rgba(0, 200, 0, 0.4); color: #6ee7b7; }
+        .pill.minor_damage { border-color: rgba(255, 220, 0, 0.4); color: #fde047; }
+        .pill.major_damage { border-color: rgba(255, 140, 0, 0.4); color: #fdba74; }
+        .pill.destroyed { border-color: rgba(220, 0, 0, 0.4); color: #fca5a5; }
+
         .images {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 20px;
         }
         .image-card { min-width: 0; }
-        .image-card img { width: 100%; border-radius: 9px; display: block; }
-        .image-card h3 { font-size: 16px; }
-        .heatmap { max-width: 750px; margin: 0 auto; }
-        .heatmap img { width: 100%; border-radius: 10px; }
-        .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }
-        .legend span { color: #c8d4e5; font-size: 13px; }
-        .dot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; }
+        .image-card img { width: 100%; border-radius: 9px; display: block; border: 1px solid #23344d; }
+        .image-card h3 { font-size: 15px; margin-bottom: 8px; }
+
+        /* Interactive Map Overlay Viewport */
+        .overlay-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .overlay-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        .tab-btn {
+            background: #1c2b42;
+            color: #bdcbe0;
+            border: 1px solid #2f4362;
+            padding: 8px 16px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .tab-btn.active {
+            background: #35c995;
+            color: #071a16;
+            border-color: #35c995;
+        }
+        .image-viewport {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #2f4362;
+            line-height: 0;
+        }
+        .image-viewport img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+        }
+        .svg-building {
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .svg-building:hover, .svg-building.selected {
+            stroke-width: 4 !important;
+            stroke: #ffffff !important;
+            filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+        }
+        .svg-centroid {
+            fill: #ffffff;
+            stroke: #000000;
+            stroke-width: 1;
+            pointer-events: none;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #4a6385;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 12px;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+            line-height: 1.4;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+        }
+
+        .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 15px; }
+        .legend span { color: #c8d4e5; font-size: 13px; display: inline-flex; align-items: center; }
+        .dot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; }
+
+        /* Coordinates Disclaimer Notice */
+        .coordinates-notice {
+            background: #17263c;
+            border: 1px solid #324a6e;
+            border-left: 4px solid #52d6a0;
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin: 18px 0;
+            font-size: 14px;
+            color: #d1dfed;
+        }
+
+        /* Building Table */
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: #101927;
+            border: 1px solid #293a52;
+            color: #9cb0cb;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #253b58;
+            color: #52d6a0;
+            border-color: #52d6a0;
+        }
+        .table-wrap {
+            max-height: 480px;
+            overflow-y: auto;
+            border: 1px solid #28374d;
+            border-radius: 9px;
+            background: #0d1727;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+        th {
+            background: #152236;
+            color: #9cb0cb;
+            padding: 10px 14px;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid #2d3e58;
+            font-weight: 600;
+        }
+        td {
+            padding: 9px 14px;
+            border-bottom: 1px solid #1a283c;
+        }
+        tr:hover {
+            background: #18283e;
+            cursor: pointer;
+        }
+        tr.selected-row {
+            background: #223755 !important;
+            outline: 1px solid #52d6a0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+        .badge.no_damage { background: rgba(0, 200, 0, 0.2); color: #4ade80; border: 1px solid rgba(0, 200, 0, 0.4); }
+        .badge.minor_damage { background: rgba(255, 220, 0, 0.2); color: #facc15; border: 1px solid rgba(255, 220, 0, 0.4); }
+        .badge.major_damage { background: rgba(255, 140, 0, 0.2); color: #fb923c; border: 1px solid rgba(255, 140, 0, 0.4); }
+        .badge.destroyed { background: rgba(220, 0, 0, 0.2); color: #f87171; border: 1px solid rgba(220, 0, 0, 0.4); }
+
+        /* JSON Drawer */
+        pre.json-box {
+            background: #0a101d;
+            border: 1px solid #23344d;
+            border-radius: 8px;
+            padding: 16px;
+            color: #7dd3fc;
+            max-height: 350px;
+            overflow-y: auto;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 8px;
+            background: #35c995;
+            color: #071a16;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .button.secondary {
+            background: #1f3048;
+            color: #9cb0cb;
+            border: 1px solid #334a6e;
+        }
+        .button.secondary:hover {
+            background: #2b4160;
+            color: #e8eef8;
+            text-decoration: none;
+        }
+
         .notice {
             border-left: 3px solid #f5bd62;
             padding: 12px 15px;
             background: #211d19;
             color: #e8d6b7;
             line-height: 1.6;
+            margin-top: 24px;
+            font-size: 13px;
         }
-        .button {
-            display: inline-block;
-            padding: 12px 17px;
-            border-radius: 8px;
-            background: #35c995;
-            color: #071a16;
-            font-weight: 700;
-            margin-top: 10px;
-        }
-        @media (max-width: 650px) {
-            .images, .metrics { grid-template-columns: 1fr; }
+        @media (max-width: 800px) {
+            .metrics { grid-template-columns: repeat(2, 1fr); }
+            .images { grid-template-columns: 1fr; }
             h1 { font-size: 24px; }
         }
     </style>
@@ -84,78 +313,308 @@
     </header>
 
     <main>
-        <h1>Satellite Analysis Results</h1>
-        <p class="muted">Incident ID: {{ record.incident_id }}</p>
+        <h1>Satellite Damage Analysis & Building Footprints</h1>
+        <p class="muted">Incident ID: <code>{{ record.incident_id }}</code></p>
 
+        <!-- Prediction & Building Summary -->
         <section class="panel">
-            <h2>Prediction summary</h2>
+            <h2>Extraction & Damage Summary</h2>
             <div class="metrics">
                 <div class="metric">
-                    <span class="muted">Original image resolution</span>
+                    <span class="muted">Image Resolution</span>
                     <strong>{{ record.image_size[1] }} × {{ record.image_size[0] }}</strong>
                 </div>
                 <div class="metric">
-                    <span class="muted">Building pixels detected</span>
+                    <span class="muted">Total Buildings Extracted</span>
+                    <strong>{{ record.total_buildings }}</strong>
+                </div>
+                <div class="metric">
+                    <span class="muted">Building Footprint Pixels</span>
                     <strong>{{ "{:,}".format(record.building_pixels) }}</strong>
                 </div>
                 <div class="metric">
-                    <span class="muted">Database status</span>
+                    <span class="muted">Database Status</span>
                     <strong style="font-size:19px">
                         {{ "Saved" if database_status == "saved" else "Not saved" }}
                     </strong>
                 </div>
             </div>
-            <p class="muted">
-                Pixel counts are model outputs at the original image resolution.
-                Predictions are not independently verified damage assessments.
-            </p>
+
+            <!-- Damage Distribution by Building Instances -->
+            <div class="damage-summary-pills">
+                <div class="pill no_damage">
+                    <i class="dot" style="background:#00c800"></i>
+                    No Damage: {{ record.damage_summary.no_damage }} buildings
+                </div>
+                <div class="pill minor_damage">
+                    <i class="dot" style="background:#ffdc00"></i>
+                    Minor Damage: {{ record.damage_summary.minor_damage }} buildings
+                </div>
+                <div class="pill major_damage">
+                    <i class="dot" style="background:#ff8c00"></i>
+                    Major Damage: {{ record.damage_summary.major_damage }} buildings
+                </div>
+                <div class="pill destroyed">
+                    <i class="dot" style="background:#dc0000"></i>
+                    Destroyed: {{ record.damage_summary.destroyed }} buildings
+                </div>
+            </div>
         </section>
 
+        <!-- Mandatory Coordinate Disclaimer Notice -->
+        <div class="coordinates-notice">
+            <strong>⚠️ Coordinate Notice:</strong> Coordinates refer to pixels in the uploaded image (origin [0, 0] at top-left). They are <strong>not geographic coordinates</strong> (latitude / longitude).
+        </div>
+
+        <!-- Before & After Imagery -->
         <section class="panel">
-            <h2>Original satellite images</h2>
+            <h2>Original Satellite Images</h2>
             <div class="images">
                 <div class="image-card">
-                    <h3>Before disaster</h3>
+                    <h3>Pre-Disaster Satellite Image</h3>
                     <img src="{{ pre_url }}" alt="Pre-disaster satellite image">
                 </div>
                 <div class="image-card">
-                    <h3>After disaster</h3>
+                    <h3>Post-Disaster Satellite Image</h3>
                     <img src="{{ post_url }}" alt="Post-disaster satellite image">
                 </div>
             </div>
         </section>
 
+        <!-- Interactive AI Overlay with Building Selectors -->
         <section class="panel">
-            <h2>AI prediction overlay</h2>
+            <h2>Building-Level Damage Overlay</h2>
             <p class="muted">
-                Colored areas indicate predicted nonzero classes over the
-                post-disaster image.
+                Hover over or click any building bounding box to inspect its pixel coordinates, area, and damage probability distribution.
             </p>
-            <div class="heatmap">
-                <img src="{{ heatmap_url }}" alt="AI prediction heatmap overlay">
+
+            <div class="overlay-container">
+                <div class="overlay-tabs">
+                    <button class="tab-btn active" id="btn-heatmap" onclick="switchLayer('heatmap')">Damage Heatmap Overlay</button>
+                    <button class="tab-btn" id="btn-annotated" onclick="switchLayer('annotated')">Box & Centroid Overlay</button>
+                    <button class="tab-btn" id="btn-post" onclick="switchLayer('post')">Original Post-Disaster</button>
+                </div>
+
+                <div class="image-viewport" id="viewport">
+                    <img id="base-image" src="{{ heatmap_url }}" alt="Satellite overlay">
+                    <!-- Interactive SVG overlay containing bounding boxes & centroids -->
+                    <svg id="building-svg" class="svg-overlay" viewBox="0 0 {{ record.image_size[1] }} {{ record.image_size[0] }}" preserveAspectRatio="none">
+                        {% for b in buildings_data.buildings %}
+                        {% set color_map = {"no_damage": "#00c800", "minor_damage": "#ffdc00", "major_damage": "#ff8c00", "destroyed": "#dc0000"} %}
+                        {% set color = color_map.get(b.damage_label, "#ffffff") %}
+                        <rect id="rect-{{ b.building_id }}" class="svg-building"
+                              x="{{ b.bounding_box.x_min }}"
+                              y="{{ b.bounding_box.y_min }}"
+                              width="{{ b.bounding_box.x_max - b.bounding_box.x_min + 1 }}"
+                              height="{{ b.bounding_box.y_max - b.bounding_box.y_min + 1 }}"
+                              stroke="{{ color }}"
+                              stroke-width="2"
+                              fill="{{ color }}"
+                              fill-opacity="0.15"
+                              data-id="{{ b.building_id }}"
+                              data-damage="{{ b.damage_label }}"
+                              data-cx="{{ b.centroid.x }}"
+                              data-cy="{{ b.centroid.y }}"
+                              data-area="{{ b.area_pixels }}"
+                              data-confidence="{{ b.confidence }}"
+                              onmouseover="highlightBuilding('{{ b.building_id }}', event)"
+                              onmouseout="unhighlightBuilding('{{ b.building_id }}')"
+                              onclick="selectBuilding('{{ b.building_id }}')">
+                        </rect>
+                        <circle cx="{{ b.centroid.x }}" cy="{{ b.centroid.y }}" r="3" class="svg-centroid" />
+                        {% endfor %}
+                    </svg>
+                    <div id="tooltip" class="tooltip"></div>
+                </div>
+
+                <div class="legend">
+                    <span><i class="dot" style="background:#00c800"></i>No damage</span>
+                    <span><i class="dot" style="background:#ffdc00"></i>Minor damage</span>
+                    <span><i class="dot" style="background:#ff8c00"></i>Major damage</span>
+                    <span><i class="dot" style="background:#dc0000"></i>Destroyed</span>
+                    <span style="margin-left:auto; font-size:12px; color:#8ba0be;">White dots: Building Centroids</span>
+                </div>
             </div>
-            <div class="legend">
-                <span><i class="dot" style="background:#00c800"></i>No damage (1)</span>
-                <span><i class="dot" style="background:#ffdc00"></i>Minor damage (2)</span>
-                <span><i class="dot" style="background:#ff8c00"></i>Major damage (3)</span>
-                <span><i class="dot" style="background:#dc0000"></i>Destroyed (4)</span>
+        </section>
+
+        <!-- Detected Buildings Table -->
+        <section class="panel">
+            <h2>Detected Building Instances ({{ record.total_buildings }})</h2>
+            <div class="table-controls">
+                <div class="filter-group">
+                    <span class="muted" style="align-self:center; font-size:13px; margin-right:4px;">Filter:</span>
+                    <button class="filter-btn active" onclick="filterTable('all', this)">All ({{ record.total_buildings }})</button>
+                    <button class="filter-btn" onclick="filterTable('no_damage', this)">No Damage ({{ record.damage_summary.no_damage }})</button>
+                    <button class="filter-btn" onclick="filterTable('minor_damage', this)">Minor Damage ({{ record.damage_summary.minor_damage }})</button>
+                    <button class="filter-btn" onclick="filterTable('major_damage', this)">Major Damage ({{ record.damage_summary.major_damage }})</button>
+                    <button class="filter-btn" onclick="filterTable('destroyed', this)">Destroyed ({{ record.damage_summary.destroyed }})</button>
+                </div>
+                <div class="btn-group" style="margin-top:0;">
+                    <a href="{{ json_url }}" download="{{ record.buildings_json }}" class="button" style="padding:6px 14px; font-size:13px;">
+                        📥 Download Buildings JSON
+                    </a>
+                </div>
             </div>
-            <p class="muted">Predicted pixel counts by damage class:</p>
-            <ul>
-                {% set class_names = {"0": "Background", "1": "No damage", "2": "Minor damage", "3": "Major damage", "4": "Destroyed"} %}
-                {% for class_id, count in record.predicted_class_pixel_counts.items() %}
-                <li>{{ class_names.get(class_id, "Class " ~ class_id) }}: {{ "{:,}".format(count) }} pixels</li>
-                {% endfor %}
-            </ul>
+
+            <div class="table-wrap">
+                <table id="buildings-table">
+                    <thead>
+                        <tr>
+                            <th>Building ID</th>
+                            <th>Centroid (X, Y)</th>
+                            <th>Bounding Box [Xmin, Ymin, Xmax, Ymax]</th>
+                            <th>Footprint Area</th>
+                            <th>Damage Category</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in buildings_data.buildings %}
+                        <tr id="row-{{ b.building_id }}" data-category="{{ b.damage_label }}"
+                            onmouseover="highlightBuilding('{{ b.building_id }}')"
+                            onmouseout="unhighlightBuilding('{{ b.building_id }}')"
+                            onclick="selectBuilding('{{ b.building_id }}')">
+                            <td><strong>{{ b.building_id }}</strong></td>
+                            <td>({{ b.centroid.x }}, {{ b.centroid.y }})</td>
+                            <td>[{{ b.bounding_box.x_min }}, {{ b.bounding_box.y_min }}, {{ b.bounding_box.x_max }}, {{ b.bounding_box.y_max }}]</td>
+                            <td>{{ "{:,}".format(b.area_pixels) }} px</td>
+                            <td><span class="badge {{ b.damage_label }}">{{ b.damage_label.replace('_', ' ') }}</span></td>
+                            <td>{{ (b.confidence * 100)|round(1) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Standardized JSON Output Inspector -->
+        <section class="panel">
+            <h2>Standardized Building JSON Context</h2>
+            <p class="muted">
+                Structured image-pixel building context ready for downstream risk mapping or LLM evaluation:
+            </p>
+            <pre class="json-box" id="json-viewer">{{ buildings_data | tojson(indent=2) }}</pre>
+            <div class="btn-group">
+                <button class="button secondary" onclick="copyJson()">📋 Copy JSON to Clipboard</button>
+                <a href="{{ json_url }}" download="{{ record.buildings_json }}" class="button">📥 Download JSON</a>
+            </div>
         </section>
 
         <div class="notice">
-            <strong>Research prototype:</strong> These predictions are not
-            verified damage assessments. Image alignment, model class definitions,
-            and real-world accuracy must be validated before emergency-response use.
+            <strong>Research prototype:</strong> Damage classifications and building extractions are derived from ChangeOS Swin-T semantic segmentation and connected-component analysis. Real-world emergency response missions must independently verify satellite image alignment and damage severity.
         </div>
 
-        <a class="button" href="/">Analyze another image pair</a>
+        <div style="margin-top: 24px;">
+            <a class="button" href="/">← Analyze Another Image Pair</a>
+        </div>
     </main>
+
+    <script>
+        const heatmapUrl = "{{ heatmap_url }}";
+        const annotatedUrl = "{{ annotated_url }}";
+        const postUrl = "{{ post_url }}";
+        let activeSelectedId = null;
+
+        function switchLayer(layer) {
+            const baseImg = document.getElementById("base-image");
+            const svgOverlay = document.getElementById("building-svg");
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+
+            if (layer === 'heatmap') {
+                baseImg.src = heatmapUrl;
+                svgOverlay.style.display = "block";
+                document.getElementById("btn-heatmap").classList.add("active");
+            } else if (layer === 'annotated') {
+                baseImg.src = annotatedUrl;
+                svgOverlay.style.display = "none";
+                document.getElementById("btn-annotated").classList.add("active");
+            } else if (layer === 'post') {
+                baseImg.src = postUrl;
+                svgOverlay.style.display = "block";
+                document.getElementById("btn-post").classList.add("active");
+            }
+        }
+
+        function highlightBuilding(bid, event) {
+            const rect = document.getElementById("rect-" + bid);
+            const row = document.getElementById("row-" + bid);
+            if (rect) rect.classList.add("selected");
+            if (row) row.classList.add("selected-row");
+
+            if (event && rect) {
+                const tooltip = document.getElementById("tooltip");
+                const damage = rect.getAttribute("data-damage").replace("_", " ");
+                const cx = rect.getAttribute("data-cx");
+                const cy = rect.getAttribute("data-cy");
+                const area = rect.getAttribute("data-area");
+                const conf = (parseFloat(rect.getAttribute("data-confidence")) * 100).toFixed(1);
+
+                tooltip.innerHTML = `
+                    <strong>${bid}</strong><br>
+                    Damage: <b>${damage.toUpperCase()}</b><br>
+                    Centroid: (${cx}, ${cy})<br>
+                    Area: ${area} px<br>
+                    Confidence: ${conf}%
+                `;
+
+                const viewport = document.getElementById("viewport").getBoundingClientRect();
+                const mouseX = event.clientX - viewport.left;
+                const mouseY = event.clientY - viewport.top;
+
+                tooltip.style.left = (mouseX + 15) + "px";
+                tooltip.style.top = (mouseY + 15) + "px";
+                tooltip.style.display = "block";
+            }
+        }
+
+        function unhighlightBuilding(bid) {
+            if (bid === activeSelectedId) return;
+            const rect = document.getElementById("rect-" + bid);
+            const row = document.getElementById("row-" + bid);
+            if (rect) rect.classList.remove("selected");
+            if (row) row.classList.remove("selected-row");
+            document.getElementById("tooltip").style.display = "none";
+        }
+
+        function selectBuilding(bid) {
+            if (activeSelectedId && activeSelectedId !== bid) {
+                const prevRect = document.getElementById("rect-" + activeSelectedId);
+                const prevRow = document.getElementById("row-" + activeSelectedId);
+                if (prevRect) prevRect.classList.remove("selected");
+                if (prevRow) prevRow.classList.remove("selected-row");
+            }
+            activeSelectedId = bid;
+            const rect = document.getElementById("rect-" + bid);
+            const row = document.getElementById("row-" + bid);
+            if (rect) rect.classList.add("selected");
+            if (row) {
+                row.classList.add("selected-row");
+                row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function filterTable(category, btn) {
+            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const rows = document.querySelectorAll("#buildings-table tbody tr");
+            rows.forEach(r => {
+                if (category === 'all' || r.getAttribute("data-category") === category) {
+                    r.style.display = "";
+                } else {
+                    r.style.display = "none";
+                }
+            });
+        }
+
+        function copyJson() {
+            const text = document.getElementById("json-viewer").innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Building JSON copied to clipboard!");
+            }).catch(err => {
+                console.error("Copy failed", err);
+            });
+        }
+    </script>
 </body>
 </html>
